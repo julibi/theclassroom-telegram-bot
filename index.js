@@ -1,42 +1,53 @@
-require("dotenv").config();
-const express = require("express");
+const ethers = require("ethers");
 const TelegramBot = require("node-telegram-bot-api");
-const app = express();
-const port = 5001;
+const ABI = require("./abi.json");
+require("dotenv").config();
 
-// const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const isProd = process.env.ENVIRONMENT === "PROD";
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const CHATID = process.env.CHATID;
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+// const contractAddress = isProd ? "" : TCR_DEV;
+// const alchemyWebSockets = isProd
+//   ? process.env.ALCHEMY_WEBSOCKET_PROD_URL
+//   : process.env.ALCHEMY_WEBSOCKET_DEV_URL;
+const contractAddress = process.env.TCR_DEV;
+const alchemyWebSockets = process.env.ALCHEMY_WEBSOCKET_DEV_URL;
 
-// const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+const truncateAddress = (address) => {
+  const addressStart = address.substring(0, 6);
+  const addressLength = address.length;
+  const cut = addressLength - 5;
+  const addressEnd = address.substring(addressLength, cut);
+  return `${addressStart}...${addressEnd}`;
+};
 
-app.use(express.json());
+async function main() {
+  try {
+    const provider = new ethers.providers.WebSocketProvider(alchemyWebSockets);
+    const contract = new ethers.Contract(contractAddress, ABI, provider);
 
-app.post("/webhook", async (req, res) => {
-  const webhook = req.body;
-  console.log({ req, res });
+    contract.on("Written", async (account, tokenId, character, index) => {
+      const name = await contract.characters(character)?.name;
 
-  // for (const nftTransfer of webhook.nftTransfers) {
-  //   const fromAddress = `From address: ${nftTransfer.from.slice(
-  //     0,
-  //     4
-  //   )}...${nftTransfer.from.slice(38)}`;
-  //   const toAddress = `To address: ${nftTransfer.to.slice(
-  //     0,
-  //     4
-  //   )}...${nftTransfer.to.slice(38)}`;
-  //   const tokenItem = `Token Item: ${nftTransfer.tokenName} #${nftTransfer.tokenId}`;
-  //   const transactionHash = `Transaction Hash: ${nftTransfer.transactionHash}`;
+      bot.sendMessage(
+        CHATID,
+        `Account ${truncateAddress(account)} wrote text for character "${
+          name ?? character
+        }" with NFT #${tokenId}. It is the ${index}th text of TheRetreat.`
+      );
+    });
 
-  //   const chatId = "ADD-CHAT-ID-FROM-LATER-STEPS";
-  //   const text = `${fromAddress}, ${toAddress}, ${tokenItem}, ${transactionHash}`;
-
-  //   bot.sendMessage(chatId, text);
-  // }
-});
-
-app.get("/webhook", (req, res) => {
-  res.status(200).send({ bla: "webhook" });
-});
-
-app.listen(port, () => {
-  console.log(`Listening for NFT Transfers`);
-});
+    contract.on("CharacterSet", (account, characterId, name) => {
+      bot.sendMessage(
+        CHATID,
+        `Account ${truncateAddress(
+          account
+        )} just setup a characterId ${characterId}, name: ${name}.`
+      );
+    });
+  } catch (e) {
+    return { statusCode: 500, body: "Something went wrong." };
+  }
+}
+main();
