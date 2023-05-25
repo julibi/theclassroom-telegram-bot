@@ -33,7 +33,8 @@ async function main() {
     const contract = new ethers.Contract(contractAddress, ABI, provider);
 
     contract.on("Written", async (account, tokenId, character, index) => {
-      const name = await contract.characters(character)?.name;
+      const result = await contract.characters(character);
+      const name = result.name;
 
       bot.sendMessage(
         CHATID,
