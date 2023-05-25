@@ -3,7 +3,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const ABI = require("./abi.json");
 const express = require("express");
 const app = express();
-const port = 5001 || process.env.PORT;
+const port = process.env.PORT || 5000;
 require("dotenv").config();
 
 app.use(express.json());
