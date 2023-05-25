@@ -2,7 +2,6 @@ const ethers = require("ethers");
 const TelegramBot = require("node-telegram-bot-api");
 const ABI = require("./abi.json");
 const express = require("express");
-const TelegramBot = require("node-telegram-bot-api");
 const app = express();
 const port = 5001 || process.env.PORT;
 require("dotenv").config();
