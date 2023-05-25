@@ -1,7 +1,13 @@
 const ethers = require("ethers");
 const TelegramBot = require("node-telegram-bot-api");
 const ABI = require("./abi.json");
+const express = require("express");
+const TelegramBot = require("node-telegram-bot-api");
+const app = express();
+const port = 5001 || process.env.PORT;
 require("dotenv").config();
+
+app.use(express.json());
 
 const isProd = process.env.ENVIRONMENT === "PROD";
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -51,3 +57,11 @@ async function main() {
   }
 }
 main();
+
+app.get("/", (req, res) => {
+  res.status(200).send({ theretreat: "looks good" });
+});
+
+app.listen(port, () => {
+  console.log("Listening for TheRetreat Activity");
+});
