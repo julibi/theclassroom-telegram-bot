@@ -8,16 +8,16 @@ require("dotenv").config();
 
 app.use(express.json());
 
+const TCR_PROD = "0x4D4243567413C47665e33b4EafFf58b934D23e41";
+const TCR_DEV = "0x8F8F4e3cfcd89Dc2020E8d2615d96C8d19383F22";
 const isProd = process.env.ENVIRONMENT === "PROD";
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHATID = process.env.CHATID;
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
-// const contractAddress = isProd ? "" : TCR_DEV;
-// const alchemyWebSockets = isProd
-//   ? process.env.ALCHEMY_WEBSOCKET_PROD_URL
-//   : process.env.ALCHEMY_WEBSOCKET_DEV_URL;
-const contractAddress = process.env.TCR_DEV;
-const alchemyWebSockets = process.env.ALCHEMY_WEBSOCKET_DEV_URL;
+const contractAddress = isProd ? TCR_PROD : TCR_DEV;
+const alchemyWebSockets = isProd
+  ? process.env.ALCHEMY_WEBSOCKET_PROD_URL
+  : process.env.ALCHEMY_WEBSOCKET_DEV_URL;
 
 const truncateAddress = (address) => {
   const addressStart = address.substring(0, 6);
@@ -40,7 +40,9 @@ async function main() {
         CHATID,
         `Account ${truncateAddress(account)} wrote text for character "${
           name ?? character
-        }" with NFT #${tokenId}. It is the ${index}th text of TheRetreat.`
+        }" with NFT #${tokenId}. It is the ${index}th text of TheRetreat${
+          isProd && " on production"
+        }.`
       );
     });
 
@@ -49,7 +51,9 @@ async function main() {
         CHATID,
         `Account ${truncateAddress(
           account
-        )} just setup a characterId ${characterId}, name: ${name}.`
+        )} just setup a characterId ${characterId}, name: ${name}${
+          isProd && " on production"
+        }.`
       );
     });
   } catch (e) {
